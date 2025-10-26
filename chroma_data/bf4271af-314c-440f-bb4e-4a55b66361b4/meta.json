@@ -1,0 +1,9 @@
+{
+  "id": "bf4271af-314c-440f-bb4e-4a55b66361b4",
+  "name": "CV ",
+  "embeddingModel": "nomic-embed-text",
+  "fileCount": 1,
+  "chunkCount": 2,
+  "createdAt": "2025-10-26T22:45:19.826Z",
+  "status": "ready"
+}

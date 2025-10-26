@@ -1,9 +1,11 @@
 import { Ollama } from "ollama";
-import { NextRequest, NextResponse} from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import * as path from "path";
 import * as fs from "fs";
 import { HuggingFaceTransformersEmbeddings } from "@langchain/community/embeddings/hf_transformers";
 import { Chroma } from "@langchain/community/vectorstores/chroma";
+import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
+import { ChromaClient } from "chromadb";
 interface VectorStore {
   id: string;
   name: string;
@@ -14,11 +16,12 @@ interface VectorStore {
   status: "ready" | "processing";
 }
 const STORES_DIR = path.join(process.cwd(), "chroma_data");
-
+const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
+const CHROMA_URL = process.env.CHROMA_URL || "http://localhost:8000";
 export async function POST(req: NextRequest) {
   try {
     const { storeId, query, topK = 3 } = await req.json();
-
+    console.log(storeId+ query)
     if (!storeId || !query) {
       return NextResponse.json(
         { success: false, error: "Missing storeId or query" },
@@ -38,22 +41,38 @@ export async function POST(req: NextRequest) {
     const meta: VectorStore = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
 
     // Create embeddings
+    const client = new ChromaClient();
+
     console.log(`Loading embeddings: ${meta.embeddingModel}...`);
-    const embeddings = new HuggingFaceTransformersEmbeddings({
-      model: meta.embeddingModel,
+
+    const collection = await client.getOrCreateCollection({
+      name: storeId,
+      metadata: { "hnsw:space": "cosine" },
     });
 
     // Connect to Chroma and load vector store
     console.log(`Querying Chroma collection: ${storeId}...`);
-    const vectorStore = new Chroma(embeddings, {
-      collectionName: storeId,
-      url: "http://localhost:8000",
+
+    // const vectorStore = new Chroma(embeddings, {
+    //   collectionName: storeId,
+    //   url: CHROMA_URL,
+    // });
+    const formData = await req.formData();
+     const embeddingModel = formData.get("embeddingModel") as string;
+    const embeddings = new OllamaEmbeddings({
+      model: embeddingModel,
+      baseUrl: OLLAMA_BASE_URL,
+    });
+    // Search for similar documents
+    const results= await collection.query({
+      
+      queryTexts: [query], // Chroma will embed this for you
+      nResults: 2, // how many results to return
     });
 
-    // Search for similar documents
-    const results = await vectorStore.similaritySearch(query, topK);
-
-    if (results.length === 0) {
+    console.log("============",typeof(results));
+    console.log(results);
+    if (!results) {
       return NextResponse.json({
         success: true,
         data: {
@@ -65,43 +84,43 @@ export async function POST(req: NextRequest) {
     }
 
     // Format context
-    const context = results
-      .map((doc, i) => {
-        const source = doc.metadata?.source || "Unknown";
-        return `[Document ${i + 1} - ${source}]\n${doc.pageContent}`;
-      })
-      .join("\n\n---\n\n");
+//     const context = results
+//       .map((doc, i) => {
+//         const source = doc.metadata?.source || "Unknown";
+//         return `[Document ${i + 1} - ${source}]\n${doc.pageContent}`;
+//       })
+//       .join("\n\n---\n\n");
 
-    // Generate answer using Ollama
-    console.log("Generating answer with Ollama (qwen2:7b)...");
-    const ollama = new Ollama();
+//     // Generate answer using Ollama
+//     console.log("Generating answer with Ollama (qwen2:7b)...");
+//     const ollama = new Ollama();
 
-    const systemPrompt = `You are a helpful assistant that answers questions based on provided documents.
-Always cite which document you're referencing. If the answer is not in the documents, say so clearly.
-Keep answers concise and focused. Use numbered citations like [Document 1], [Document 2], etc.`;
+//     const systemPrompt = `You are a helpful assistant that answers questions based on provided documents.
+// Always cite which document you're referencing. If the answer is not in the documents, say so clearly.
+// Keep answers concise and focused. Use numbered citations like [Document 1], [Document 2], etc.`;
 
-    const augmentedPrompt = `Context from documents:
-${context}
+//     const augmentedPrompt = `Context from documents:
+// ${context}
 
-Question: ${query}
+// Question: ${query}
 
-Please answer based only on the context provided above.`;
+// Please answer based only on the context provided above.`;
 
-    const response = await ollama.generate({
-      model: "qwen2:7b",
-      prompt: augmentedPrompt,
-      system: systemPrompt,
-      stream: false,
-    });
+//     const response = await ollama.generate({
+//       model: "qwen2:7b",
+//       prompt: augmentedPrompt,
+//       system: systemPrompt,
+//       stream: false,
+//     });
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        answer: response.response.trim(),
-        sourceCount: results.length,
-        embeddingModel: meta.embeddingModel,
-      },
-    });
+//     return NextResponse.json({
+//       success: true,
+//       data: {
+//         answer: response.response.trim(),
+//         sourceCount: results.length,
+//         embeddingModel: meta.embeddingModel,
+//       },
+    // });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("Query error:", message);
