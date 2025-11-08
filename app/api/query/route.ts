@@ -51,18 +51,18 @@ export async function POST(req: NextRequest) {
     });
 
     // Connect to Chroma and load vector store
-    console.log(`Querying Chroma collection: ${storeId}...`);
+    console.log(`Querying Chroma collection: ${JSON.stringify(collection)}...`);
 
     // const vectorStore = new Chroma(embeddings, {
     //   collectionName: storeId,
     //   url: CHROMA_URL,
     // });
-    const formData = await req.formData();
-     const embeddingModel = formData.get("embeddingModel") as string;
-    const embeddings = new OllamaEmbeddings({
-      model: embeddingModel,
-      baseUrl: OLLAMA_BASE_URL,
-    });
+    // const formData = await req.formData();
+    //  const embeddingModel = formData.get("embeddingModel") as string;
+    // const embeddings = new OllamaEmbeddings({
+    //   model: embeddingModel,
+    //   baseUrl: OLLAMA_BASE_URL,
+    // });
     // Search for similar documents
     const results= await collection.query({
       
@@ -83,44 +83,39 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Format context
-//     const context = results
-//       .map((doc, i) => {
-//         const source = doc.metadata?.source || "Unknown";
-//         return `[Document ${i + 1} - ${source}]\n${doc.pageContent}`;
-//       })
-//       .join("\n\n---\n\n");
+    //Format context
+    const context = results.documents;
 
-//     // Generate answer using Ollama
-//     console.log("Generating answer with Ollama (qwen2:7b)...");
-//     const ollama = new Ollama();
+    // Generate answer using Ollama
+    console.log("Generating answer with Ollama (qwen2:7b)...");
+    const ollama = new Ollama();
 
-//     const systemPrompt = `You are a helpful assistant that answers questions based on provided documents.
-// Always cite which document you're referencing. If the answer is not in the documents, say so clearly.
-// Keep answers concise and focused. Use numbered citations like [Document 1], [Document 2], etc.`;
+    const systemPrompt = `You are a helpful assistant that answers questions based on provided documents.
+Always cite which document you're referencing. If the answer is not in the documents, say so clearly.
+Keep answers concise and focused. Use numbered citations like [Document 1], [Document 2], etc.`;
 
-//     const augmentedPrompt = `Context from documents:
-// ${context}
+    const augmentedPrompt = `Context from documents:
+${context}
 
-// Question: ${query}
+Question: ${query}
 
-// Please answer based only on the context provided above.`;
+Please answer based only on the context provided above.`;
 
-//     const response = await ollama.generate({
-//       model: "qwen2:7b",
-//       prompt: augmentedPrompt,
-//       system: systemPrompt,
-//       stream: false,
-//     });
+    const response = await ollama.generate({
+      model: "qwen2:7b",
+      prompt: augmentedPrompt,
+      system: systemPrompt,
+      stream: false,
+    });
 
-//     return NextResponse.json({
-//       success: true,
-//       data: {
-//         answer: response.response.trim(),
-//         sourceCount: results.length,
-//         embeddingModel: meta.embeddingModel,
-//       },
-    // });
+    return NextResponse.json({
+      success: true,
+      data: {
+        answer: response.response.trim(),
+        sourceCount: results.documents?.[0]?.length??0,
+        embeddingModel: meta.embeddingModel,
+      },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("Query error:", message);
