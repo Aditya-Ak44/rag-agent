@@ -1,24 +1,78 @@
-# docker-compose.yml
+# docker-compose.yml - Complete RAG Agent Stack (All-in-One)
+# Everything runs in Docker including Ollama LLM
+# Mac Compatible - No GPU setup needed
 version: '3.8'
 
 services:
+  # Chroma Vector Database
   chroma:
-    image: chromadb/chroma:0.4.24
-    container_name: chroma-db
+    image: ghcr.io/chroma-core/chroma:latest
+    container_name: rag-chroma
     ports:
       - "8000:8000"
     environment:
-      - IS_PERSISTENT=TRUE
+      - CHROMA_ENVIRONMENT=server
+      - PERSIST_DIRECTORY=/chroma/data
     volumes:
       - chroma_data:/chroma/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/api/v1/heartbeat"]
+      test: ["CMD", "curl", "-f", "http://chroma:8000/api/v2/heartbeat"]
       interval: 30s
-      timeout: 5s
+      timeout: 10s
       retries: 3
       start_period: 40s
+
+  # Next.js RAG Application
+  rag-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rag-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+      - CHROMA_URL=http://chroma:8000
+      - OLLAMA_BASE_URL=http://localhost:11434
+    depends_on:
+      chroma:
+        condition: service_healthy
+      # ollama:
+      #   condition: service_started
+    restart: unless-stopped
+    networks:
+      - rag-network
+
+  # Ollama Service for Mac
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: rag-ollama
+  #   ports:
+  #     - "11434:11434"
+  #   environment:
+  #     - OLLAMA_HOST=0.0.0.0:11434
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #     - ./entrypoint.sh:/entrypoint.sh
+  #   entrypoint: /bin/bash /entrypoint.sh
+  #   restart: unless-stopped
+  #   networks:
+  #     - rag-network
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 60s
 
 volumes:
   chroma_data:
     driver: local
+  ollama_data:
+    driver: local
+
+networks:
+  rag-network:
+    driver: bridge

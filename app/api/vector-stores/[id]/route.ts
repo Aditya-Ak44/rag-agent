@@ -3,11 +3,13 @@ import * as path from "path";
 import * as fs from "fs";
 const STORES_DIR = path.join(process.cwd(), "chroma_data");
 export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
+  req: NextRequest, 
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  
   try {
-    const storeDir = path.join(STORES_DIR, params.id);
+    const { id } = await params;
+    const storeDir =  path.join(STORES_DIR, id);
 
     if (!fs.existsSync(storeDir)) {
       return NextResponse.json(

@@ -1,0 +1,58 @@
+# .dockerignore
+# Exclude files from Docker image to reduce size
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# Next.js
+.next
+out
+dist
+
+# Development
+.env.local
+.env.*.local
+.DS_Store
+.vscode
+.idea
+*.swp
+*.swo
+
+# Testing
+coverage
+.pytest_cache
+.jest_cache
+
+# OS
+Thumbs.db
+.AppleDouble
+
+# Project specific
+chroma_data
+.chroma
+vector_stores
+temp
+uploads
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+
+# README & Docs
+README.md
+*.md
+docs
