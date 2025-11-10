@@ -17,11 +17,7 @@ services:
       - chroma_data:/chroma/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://chroma:8000/api/v2/heartbeat"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      disable: true
 
   # Next.js RAG Application
   rag-app:
@@ -38,34 +34,12 @@ services:
       - OLLAMA_BASE_URL=http://localhost:11434
     depends_on:
       chroma:
-        condition: service_healthy
+        condition: service_started
       # ollama:
       #   condition: service_started
     restart: unless-stopped
     networks:
       - rag-network
-
-  # Ollama Service for Mac
-  # ollama:
-  #   image: ollama/ollama:latest
-  #   container_name: rag-ollama
-  #   ports:
-  #     - "11434:11434"
-  #   environment:
-  #     - OLLAMA_HOST=0.0.0.0:11434
-  #   volumes:
-  #     - ollama_data:/root/.ollama
-  #     - ./entrypoint.sh:/entrypoint.sh
-  #   entrypoint: /bin/bash /entrypoint.sh
-  #   restart: unless-stopped
-  #   networks:
-  #     - rag-network
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 3
-  #     start_period: 60s
 
 volumes:
   chroma_data:

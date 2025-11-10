@@ -6,10 +6,7 @@ WORKDIR /app
 # Install system dependencies
 RUN apk add --no-cache \
     curl \
-    python3 \
-    py3-pip \
-    build-base && \
-    curl --version
+    build-base 
 
 # Copy package files
 COPY package*.json ./
