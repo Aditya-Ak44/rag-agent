@@ -308,7 +308,7 @@ export default function Home() {
                   {/* Embedding Model Selection */}
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Embedding Model (HuggingFace)
+                      Embedding Model
                     </label>
                     <select
                       value={embeddingModel}

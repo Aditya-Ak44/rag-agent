@@ -21,7 +21,7 @@ interface StoreMetaData {
 
 const STORES_DIR = path.join(process.cwd(), "chroma_data");
 const CHROMA_URL = process.env.CHROMA_URL || "http://localhost:8000";
-const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
+const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || "http://host.docker.internal:11434";
 
 export async function POST(req: NextRequest) {
   let tempDir: string | null = null;

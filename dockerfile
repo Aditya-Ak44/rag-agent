@@ -6,13 +6,18 @@ WORKDIR /app
 # Install system dependencies
 RUN apk add --no-cache \
     curl \
-    build-base 
+    python3 \
+    py3-pip \
+    build-base \
+    gcc \
+    g++ \
+    make
 
 # Copy package files
 COPY package*.json ./
 
 # Install Node dependencies with legacy peer deps
-RUN npm install --legacy-peer-deps
+RUN npm install --legacy-peer-deps 
 
 # Copy application code
 COPY . .

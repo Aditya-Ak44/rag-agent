@@ -1,9 +1,0 @@
-{
-  "id": "e2c75250-ed82-4034-86b8-8c88c043b334",
-  "name": "oracel docs",
-  "embeddingModel": "all-minilm:latest",
-  "fileCount": 1,
-  "chunkCount": 2295,
-  "createdAt": "2025-11-08T12:04:42.120Z",
-  "status": "ready"
-}

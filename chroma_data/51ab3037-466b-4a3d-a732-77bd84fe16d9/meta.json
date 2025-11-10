@@ -1,0 +1,9 @@
+{
+  "id": "51ab3037-466b-4a3d-a732-77bd84fe16d9",
+  "name": "Oracle ODA Docs",
+  "embeddingModel": "all-minilm:latest",
+  "fileCount": 1,
+  "chunkCount": 2295,
+  "createdAt": "2025-11-10T23:13:58.086Z",
+  "status": "ready"
+}
